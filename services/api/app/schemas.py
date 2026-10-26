@@ -72,6 +72,10 @@ class Poi(Waypoint):
 
 
 class Snapshot(BaseModel):
+    physical_commands_enabled: Literal[False] = False
+    emergency_stopped: bool = False
+    watchdog_expired: bool = False
+    sequence: int = 0
     simulated: Literal[True] = True
     connected: bool
     mode: Literal['manual', 'autonomous']
