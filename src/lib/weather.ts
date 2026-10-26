@@ -1,0 +1,6 @@
+import {useMemo} from 'react';
+import {useQuery} from '@tanstack/react-query';
+import {DEFAULT_ENV,ORIGIN,type Environment} from './world';
+export type Weather={elevation:number;current:{time:string;temperature_2m:number;relative_humidity_2m:number;apparent_temperature:number;precipitation:number;rain:number;weather_code:number;wind_speed_10m:number;wind_gusts_10m:number;wind_direction_10m?:number;cloud_cover?:number};daily:{time:string[];weather_code:number[];temperature_2m_max:number[];temperature_2m_min:number[];precipitation_sum:number[];precipitation_probability_max:number[];wind_speed_10m_max:number[]}};
+export function useFieldWeather(lat:number,lon:number){return useQuery({queryKey:['field-weather',lat,lon],queryFn:async()=>{const r=await fetch(`/api/weather?lat=${lat}&lon=${lon}`);const d=await r.json();if(!r.ok)throw new Error(d.error||'No se pudo consultar el clima');return d as Weather;},staleTime:600000,refetchInterval:600000,retry:1});}
+export function useEnvironment():Environment{const c=useFieldWeather(ORIGIN.lat,ORIGIN.lon).data?.current;return useMemo(()=>c?{temp:c.temperature_2m,humidity:c.relative_humidity_2m,windKmh:c.wind_speed_10m,gustKmh:c.wind_gusts_10m,windDir:c.wind_direction_10m??DEFAULT_ENV.windDir,cloud:c.cloud_cover??DEFAULT_ENV.cloud,rain:c.precipitation,code:c.weather_code,live:true}:DEFAULT_ENV,[c]);}
