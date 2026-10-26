@@ -53,3 +53,9 @@ body{background:radial-gradient(ellipse at 70% 15%,#263b2528,transparent 55%),#0
 .cow-head{animation:cow-graze 2.6s ease-in-out infinite}
 .cow-walk{animation:cow-step .9s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){.windmill-rotor,.cloud-shadows,.rain,.tank-ripple,.cow-head,.cow-walk{animation:none}}
+.kit-modules{display:flex;flex-wrap:wrap;gap:8px 14px;margin:16px 0 4px;padding-top:14px;border-top:1px solid var(--line);font-size:10px;color:var(--muted)}
+.kit-modules>small{width:100%;letter-spacing:1.4px;font-size:8px}
+.kit-modules span{display:inline-flex;align-items:center;gap:7px}
+.kit-modules i{width:7px;height:7px;border-radius:50%}
+.kit-modules b{font-size:8px;letter-spacing:.6px;color:#c9d4cb}
+.metric>strong.long{font-size:22px}
