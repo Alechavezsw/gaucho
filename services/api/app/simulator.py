@@ -20,6 +20,9 @@ class Simulator:
         self.action = 'stop'
         self.requested_speed = 0.0
         self.last_command = 0.0
+        self.last_tick = time.monotonic()
+        self.watchdog_expired = False
+        self.emergency_stopped = False
         self.tick_count = 0
         self.scenario: str | None = None
         self.scenario_until = 0
@@ -122,7 +125,14 @@ class Simulator:
             self.repository.save(mission)
         return speed
 
+    def check_watchdog(self):
+        if self.mode == 'manual' and self.action != 'stop' and time.monotonic() - self.last_command >= 0.65:
+            self.stop()
+            self.watchdog_expired = True
+
     def tick(self):
+        self.last_tick = time.monotonic()
+        self.check_watchdog()
         self.tick_count += 1
         if self.tick_count >= self.horn_until:
             self.accessories['horn'] = False
@@ -130,8 +140,6 @@ class Simulator:
             self.stop()
             return  # Last telemetry timestamp stays stale when simulated link is lost.
         t = self.telemetry
-        if time.monotonic() - self.last_command > 1.5:
-            self.action = 'stop'
         if self.tick_count >= self.scenario_until:
             self.scenario = None
         running = next((m for m in self.missions if m['status'] == 'running'), None)
@@ -163,6 +171,8 @@ class Simulator:
             self.alert('battery', 'Batería baja', 'warning')
 
     def snapshot(self):
-        return dict(simulated=True, connected=self.connected, mode=self.mode, rover='GAUCHO · SJ-01',
+        return dict(simulated=True, physical_commands_enabled=False,
+                    emergency_stopped=self.emergency_stopped, watchdog_expired=self.watchdog_expired,
+                    sequence=self.tick_count, connected=self.connected, mode=self.mode, rover='GAUCHO · SJ-01',
                     starlink='SIMULADO', telemetry=self.telemetry, trail=self.trail, pois=self.pois,
                     accessories=self.accessories)

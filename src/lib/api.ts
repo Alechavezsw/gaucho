@@ -9,7 +9,7 @@ export const useRover = create<{snapshot:Snapshot|null;online:boolean;set:(snaps
 export async function request<T>(path:string,method='GET',body?:unknown):Promise<T>{
  if(KIT)return kitRequest<T>(path,method,body);
  if(DEMO)return demoRequest<T>(path,method,body);
- const response = await fetch(API+path,{method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+ const response = await fetch(API+path,{signal:AbortSignal.timeout(2500),method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
  if(!response.ok){ const error = await response.json(); throw new Error(error.detail || 'Error de API'); }
  return response.json();
 }
