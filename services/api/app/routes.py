@@ -66,6 +66,8 @@ async def create_mission(body: dto.MissionInput, sim: Sim):
 
 @routers['missions'].post('/{mission_id}/start', response_model=dto.Mission)
 async def start_mission(mission_id: str, sim: Sim):
+    if sim.emergency_stopped or sim.scenario:
+        raise HTTPException(409, 'Simulador bloqueado por parada o escenario activo')
     if not sim.connected:
         raise HTTPException(409, 'Rover desconectado')
     if any(m['status'] == 'running' for m in sim.missions):
@@ -96,14 +98,29 @@ async def read_alert(alert_id: str, sim: Sim):
 
 @routers['controls'].post('/movement')
 async def movement(body: dto.Control, sim: Sim):
-    if body.action != 'stop' and (not sim.connected or sim.mode != 'manual'):
+    if body.action != 'stop' and (not sim.connected or sim.mode != 'manual' or sim.emergency_stopped or sim.scenario):
         raise HTTPException(409, 'Conducción manual no disponible')
     sim.action = body.action
     sim.requested_speed = body.speed
     sim.last_command = time.monotonic()
+    sim.watchdog_expired = False
     if body.action == 'stop':
         sim.stop()
     return {'simulated': True, 'action': sim.action}
+
+
+@routers['controls'].post('/emergency-stop', response_model=dto.Snapshot)
+async def emergency_stop(sim: Sim):
+    sim.emergency_stopped = True
+    sim.stop()
+    return sim.snapshot()
+
+
+@routers['controls'].post('/emergency-reset', response_model=dto.Snapshot)
+async def emergency_reset(sim: Sim):
+    sim.stop()
+    sim.emergency_stopped = False
+    return sim.snapshot()
 
 
 @routers['controls'].post('/mode', response_model=dto.Snapshot)

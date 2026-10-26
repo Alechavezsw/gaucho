@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,8 @@ from .simulator import Simulator
 
 
 def create_app(database_path: str | None = None) -> FastAPI:
+    if os.getenv('GAUCHO_MODE', 'simulation') != 'simulation':
+        raise ValueError('Solo se permite GAUCHO_MODE=simulation; motores físicos deshabilitados')
     origins = os.getenv('CORS_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
 
     @asynccontextmanager
@@ -19,8 +22,10 @@ def create_app(database_path: str | None = None) -> FastAPI:
 
         async def run():
             while True:
-                await asyncio.sleep(1)
-                app.state.simulator.tick()
+                await asyncio.sleep(0.05)
+                app.state.simulator.check_watchdog()
+                if time.monotonic() - app.state.simulator.last_tick >= 1:
+                    app.state.simulator.tick()
 
         task = asyncio.create_task(run())
         yield
